@@ -7,7 +7,7 @@ def library = rootProject.ext.dependencies
 android {
     compileSdkVersion info.compileSdkVersion
     defaultConfig {
-        applicationId "com.yhd.wave.app"
+        applicationId "com.yhd.bluetooth.app"
         minSdkVersion info.minSdkVersion
         targetSdkVersion info.targetSdkVersion
         versionCode info.versionCode
@@ -31,6 +31,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
         }
     }
 
@@ -55,7 +56,7 @@ android {
             def buildType = variant.buildType.name
             def time = new Date().format("yyyyMMdd", TimeZone.getTimeZone("GMT+08:00"))
             if (variant.buildType.name == 'debug') {
-                outputFileName = "semicircle_${versionName}_c${versionCode}_${buildType}.apk"
+                outputFileName = "bluetooth_${versionName}_c${versionCode}_${buildType}.apk"
             } else {
                 outputFileName = "bluetooth_${versionName}_${time}_${buildType}.apk"
             }
