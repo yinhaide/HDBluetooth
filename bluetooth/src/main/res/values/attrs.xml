@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--半圆形分布-->
+    <declare-styleable name="SemiCircleView">
+        <!--圆环宽度比例-->
+        <attr name="se_distanceRatio" format="float" />
+        <!--背景颜色-->
+        <attr name="se_backgroungColor" format="color" />
+        <!--加深颜色-->
+        <attr name="se_deepColor" format="color" />
+        <!--动画持续时间-->
+        <attr name="se_animationTime" format="integer" />
+    </declare-styleable>
+</resources>

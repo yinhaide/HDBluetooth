@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.de.rocket.ue.layout.PercentRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#38a9f9">
+
+    <ListView
+        android:layout_marginTop="20dp"
+        android:id="@+id/lv_device"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
+
+    <TextView
+        android:padding="10dp"
+        android:layout_below="@+id/lv_device"
+        android:layout_marginTop="10dp"
+        android:id="@+id/tv_content"
+        android:layout_alignParentTop="true"
+        android:text="@string/app_name"
+        android:textColor="@color/colorAccent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" />
+
+    <Button
+        android:padding="5dp"
+        android:background="@drawable/bt_selecter"
+        android:focusable="true"
+        android:layout_below="@+id/tv_content"
+        android:layout_centerHorizontal="true"
+        android:id="@+id/bt_send"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/rocket_cl_white"
+        android:text="发送数据:I am client"/>
+
+</com.de.rocket.ue.layout.PercentRelativeLayout>
