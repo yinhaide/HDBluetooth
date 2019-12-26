@@ -34,7 +34,6 @@ public class BluetoothLEHelper {
     private static BluetoothLEHelper instance;
     private ArrayList<BluetoothGatt> mBluetoothGattList;
     private BluetoothAdapter mBluetoothAdapter;
-    private Context mContext;
     private long SCAN_PERIOD = 10000;
     private boolean mScanning;
     private Handler mHandler;
@@ -172,22 +171,22 @@ public class BluetoothLEHelper {
     /**
      * 构造函数
      */
-    private BluetoothLEHelper(Context context) {
-        this.mContext = context;
-        final BluetoothManager bluetoothManager = (BluetoothManager) mContext.getSystemService(Context.BLUETOOTH_SERVICE);
+    public BluetoothLEHelper init(Context context) {
+        final BluetoothManager bluetoothManager = (BluetoothManager) context.getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
         mHandler = new Handler();
         mLeDevices = new ArrayList<>();
         mBluetoothGattList = new ArrayList<>();
+        return instance;
     }
 
     /**
      * 单例
      */
-    public static synchronized BluetoothLEHelper getInstance(Context context) {
+    public static synchronized BluetoothLEHelper get() {
         if (instance == null) {
             Log.v(TAG, "Create BluetoothLEHelper instance");
-            instance = new BluetoothLEHelper(context);
+            instance = new BluetoothLEHelper();
         }
         return instance;
     }
@@ -208,8 +207,8 @@ public class BluetoothLEHelper {
      *
      * @return 是否支持
      */
-    public boolean isSurport() {
-        boolean result = mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
+    public boolean isSurport(Context context) {
+        boolean result = context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
         Log.v(TAG, "isSurport:" + String.valueOf(result));
         return result;
     }
@@ -345,7 +344,7 @@ public class BluetoothLEHelper {
      * @param address       对方设备地址
      * @param isAutoConnect 设置是否以后自动连接
      */
-    public boolean connectGatt(String address, boolean isAutoConnect) {
+    public boolean connectGatt(Context context,String address, boolean isAutoConnect) {
         Log.v(TAG, "connectGatt");
         boolean ifContained = false;
         /** 如果已经存在连接池里不再连接 */
@@ -390,7 +389,7 @@ public class BluetoothLEHelper {
             return false;
         }
         Log.v(TAG, "connectGatt run");
-        bluetoothGatt = device.connectGatt(mContext, isAutoConnect, mGattCallback);
+        bluetoothGatt = device.connectGatt(context, isAutoConnect, mGattCallback);
         addBluetoothDeviceAddress(bluetoothGatt);
         mBluetoothDeviceAddress = address;
         return true;

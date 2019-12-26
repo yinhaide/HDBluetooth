@@ -55,7 +55,7 @@ public class Frag_bluetoothle extends RoFragment {
 
     @Override
     public void onNexts(Object object) {
-        if(BluetoothLEHelper.getInstance(activity).isSurport()){
+        if(BluetoothLEHelper.get().isSurport(activity)){
             initBluetooth();
         }else{
             toast("不支持");
@@ -65,7 +65,7 @@ public class Frag_bluetoothle extends RoFragment {
 
     @Event(R.id.bt_send)
     private void send(View view) {
-        if(BluetoothLEHelper.getInstance(activity).wirteData(SERVICE_UUID,CHARACTOR_UUID,"I am Phone")){
+        if(BluetoothLEHelper.get().wirteData(SERVICE_UUID,CHARACTOR_UUID,"I am Phone")){
             toast("发送成功");
         }else{
             toast("发送失败");
@@ -77,7 +77,7 @@ public class Frag_bluetoothle extends RoFragment {
      */
     private void initView(){
         lvDevice.setOnItemClickListener((parent, view, position, id) -> {
-            boolean result = BluetoothLEHelper.getInstance(activity).connectGatt(bluetoothDevice.get(position).getAddress(),false);
+            boolean result = BluetoothLEHelper.get().connectGatt(activity,bluetoothDevice.get(position).getAddress(),false);
             if(result){
                 toast("连接成功");
             }
@@ -115,7 +115,8 @@ public class Frag_bluetoothle extends RoFragment {
      * 初始化蓝牙设备
      */
     private void initBluetooth() {
-        BluetoothLEHelper.getInstance(activity)
+        BluetoothLEHelper.get()
+                .init(activity)
                 .setEnableBluetooth(true)
                 .setBlutoothReceiverInterface(new BluetoothLEHelper.BluetoothLowEnergyInterface() {
 
@@ -143,7 +144,7 @@ public class Frag_bluetoothle extends RoFragment {
                             BluetoothGattService service = gatt.getService(UUID.fromString(SERVICE_UUID));
                             if(service != null){
                                 BluetoothGattCharacteristic characteristic = service.getCharacteristic(UUID.fromString(CHARACTOR_UUID));
-                                BluetoothLEHelper.getInstance(activity).setCharacteristicNotification(characteristic,true);
+                                BluetoothLEHelper.get().setCharacteristicNotification(characteristic,true);
                             }
                         }else if(state== BluetoothLEHelper.State.STATE_CONNECTED){
                             //连接成功
