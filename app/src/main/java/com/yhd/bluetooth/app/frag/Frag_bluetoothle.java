@@ -36,6 +36,7 @@ public class Frag_bluetoothle extends RoFragment {
     private TextView tvContent;
 
     private List<BluetoothDevice> bluetoothDevice =new ArrayList<>();
+    private List<String> nameArray =new ArrayList<>();
     private BaseAdapter usableAdapter;
     /** 配置需要交互的服务UUID */
     private final static String SERVICE_UUID="0000ffe0-0000-1000-8000-00805f9b34fb";
@@ -76,7 +77,10 @@ public class Frag_bluetoothle extends RoFragment {
      */
     private void initView(){
         lvDevice.setOnItemClickListener((parent, view, position, id) -> {
-            BluetoothLEHelper.getInstance(activity).connectGatt(bluetoothDevice.get(position).getAddress(),false);
+            boolean result = BluetoothLEHelper.getInstance(activity).connectGatt(bluetoothDevice.get(position).getAddress(),false);
+            if(result){
+                toast("连接成功");
+            }
         });
         usableAdapter=new BaseAdapter() {
             @Override
@@ -97,9 +101,10 @@ public class Frag_bluetoothle extends RoFragment {
             @Override
             public View getView(int position, View convertView, ViewGroup parent) {
                 BluetoothDevice device = bluetoothDevice.get(position);
+                String name = nameArray.get(position);
                 TextView textView=new TextView(activity);
                 textView.setTextSize(30);
-                textView.setText(device.getName()+"("+device.getAddress()+")");
+                textView.setText(name+"("+device.getAddress()+")");
                 return textView;
             }
         };
@@ -113,10 +118,12 @@ public class Frag_bluetoothle extends RoFragment {
         BluetoothLEHelper.getInstance(activity)
                 .setEnableBluetooth(true)
                 .setBlutoothReceiverInterface(new BluetoothLEHelper.BluetoothLowEnergyInterface() {
+
                     @Override
-                    public void onReceiveDevice(BluetoothDevice device) {
+                    public void onReceiveDevice(BluetoothDevice device,String name) {
                         if (!bluetoothDevice.contains(device)) {
                             bluetoothDevice.add(device);
+                            nameArray.add(name);
                         }
                         activity.runOnUiThread(() -> usableAdapter.notifyDataSetChanged());
                     }

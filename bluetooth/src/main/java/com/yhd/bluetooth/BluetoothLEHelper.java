@@ -14,7 +14,12 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Handler;
+import android.text.TextUtils;
 import android.util.Log;
+
+import com.yhd.bluetooth.bean.BleAdvertisedBean;
+import com.yhd.bluetooth.bean.HDBluetoothDevice;
+import com.yhd.bluetooth.utils.BleUtil;
 
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -23,16 +28,20 @@ import java.util.UUID;
 
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class BluetoothLEHelper {
+
     public static final String TAG = BluetoothLEHelper.class.getSimpleName();
-    public static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
+    private static String CLIENT_CHARACTERISTIC_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
     private static BluetoothLEHelper instance;
-    public ArrayList<BluetoothGatt> mBluetoothGattList;
+    private ArrayList<BluetoothGatt> mBluetoothGattList;
     private BluetoothAdapter mBluetoothAdapter;
     private Context mContext;
     private long SCAN_PERIOD = 10000;
     private boolean mScanning;
     private Handler mHandler;
     private BluetoothLowEnergyInterface bluetoothLowEnergyInterface;
+    private BluetoothGatt bluetoothGatt;
+    private String mBluetoothDeviceAddress;
+    private ArrayList<BluetoothDevice> mLeDevices;
     /**
      * 蓝牙状态数据回调类
      */
@@ -59,7 +68,6 @@ public class BluetoothLEHelper {
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
             Log.v(TAG, "onServicesDiscovered:" + status);
-
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 if (bluetoothLowEnergyInterface != null) {
                     bluetoothLowEnergyInterface.onState(State.STATE_SERVER_DISCOVERED, gatt);
@@ -98,14 +106,13 @@ public class BluetoothLEHelper {
             }
         }
 
+        @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
             Log.v(TAG, "onCharacteristicWrite:write success-status:" + status);
             if (bluetoothLowEnergyInterface != null) {
                 bluetoothLowEnergyInterface.onState(State.STATE_CHARATERISTIC_WRITE, gatt, status);
             }
         }
-
-        ;
 
         @Override
         public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
@@ -140,9 +147,7 @@ public class BluetoothLEHelper {
             }
         }
     };
-    private BluetoothGatt bluetoothGatt;
-    private String mBluetoothDeviceAddress;
-    private ArrayList<BluetoothDevice> mLeDevices;
+
     /**
      * 蓝牙扫描结果回调
      */
@@ -150,13 +155,15 @@ public class BluetoothLEHelper {
 
         @Override
         public void onLeScan(BluetoothDevice device, int rssi, byte[] scanRecord) {
-
             if (!mLeDevices.contains(device)) {
                 mLeDevices.add(device);
-
-                Log.v(TAG, "LeScanCallback:" + device.getName());
+                final BleAdvertisedBean badata = BleUtil.parseAdertisedData(scanRecord);
+                String deviceName = device.getName();
+                if (TextUtils.isEmpty(deviceName)) {
+                    deviceName = badata.getName();
+                }
                 if (bluetoothLowEnergyInterface != null) {
-                    bluetoothLowEnergyInterface.onReceiveDevice(device);
+                    bluetoothLowEnergyInterface.onReceiveDevice(device,deviceName);
                 }
             }
         }
@@ -170,10 +177,13 @@ public class BluetoothLEHelper {
         final BluetoothManager bluetoothManager = (BluetoothManager) mContext.getSystemService(Context.BLUETOOTH_SERVICE);
         mBluetoothAdapter = bluetoothManager.getAdapter();
         mHandler = new Handler();
-        mLeDevices = new ArrayList<BluetoothDevice>();
-        mBluetoothGattList = new ArrayList<BluetoothGatt>();
+        mLeDevices = new ArrayList<>();
+        mBluetoothGattList = new ArrayList<>();
     }
 
+    /**
+     * 单例
+     */
     public static synchronized BluetoothLEHelper getInstance(Context context) {
         if (instance == null) {
             Log.v(TAG, "Create BluetoothLEHelper instance");
@@ -185,7 +195,7 @@ public class BluetoothLEHelper {
     /**
      * 设置扫描回调接口
      *
-     * @param receiverInterface
+     * @param receiverInterface receiverInterface
      */
     public BluetoothLEHelper setBlutoothReceiverInterface(BluetoothLowEnergyInterface receiverInterface) {
         Log.v(TAG, "setBlutoothReceiverInterface");
@@ -196,7 +206,7 @@ public class BluetoothLEHelper {
     /**
      * 是否支持蓝牙低功耗
      *
-     * @return
+     * @return 是否支持
      */
     public boolean isSurport() {
         boolean result = mContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH_LE);
@@ -209,7 +219,7 @@ public class BluetoothLEHelper {
      * Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
      * startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
      *
-     * @return
+     * @return 蓝牙是否打开
      */
     public boolean isBluetoothEnable() {
         boolean result = mBluetoothAdapter.isEnabled();
@@ -220,7 +230,7 @@ public class BluetoothLEHelper {
     /**
      * 设置蓝牙状态
      *
-     * @return
+     * @return 蓝牙状态
      */
     public BluetoothLEHelper setEnableBluetooth(boolean enable) {
         boolean result;
@@ -249,7 +259,7 @@ public class BluetoothLEHelper {
     /**
      * 设置蓝牙名字
      *
-     * @return
+     * @return 蓝牙名字
      */
     public boolean setBluetoothName(String name) {
         Log.v(TAG, "setBluetoothName：" + name);
@@ -298,14 +308,11 @@ public class BluetoothLEHelper {
 
         clear();
         if (enable) {
-            mHandler.postDelayed(new Runnable() {
-                @Override
-                public void run() {
-                    mScanning = false;
-                    mBluetoothAdapter.stopLeScan(mLeScanCallback);
-                    if (bluetoothLowEnergyInterface != null) {
-                        bluetoothLowEnergyInterface.onState(State.STATE_SCAN_END, bluetoothGatt);
-                    }
+            mHandler.postDelayed(() -> {
+                mScanning = false;
+                mBluetoothAdapter.stopLeScan(mLeScanCallback);
+                if (bluetoothLowEnergyInterface != null) {
+                    bluetoothLowEnergyInterface.onState(State.STATE_SCAN_END, bluetoothGatt);
                 }
             }, SCAN_PERIOD);
             mScanning = true;
@@ -328,7 +335,7 @@ public class BluetoothLEHelper {
      * @param time 时间
      */
     public void setScanPeriod(long time) {
-        Log.v(TAG, "setScanPeriod：" + String.valueOf(time));
+        Log.v(TAG, "setScanPeriod：" + time);
         SCAN_PERIOD = time;
     }
 
@@ -362,7 +369,7 @@ public class BluetoothLEHelper {
             }
             return false;
         }
-        if (mBluetoothDeviceAddress != null && address.equals(mBluetoothDeviceAddress) && bluetoothGatt != null) {
+        if (address.equals(mBluetoothDeviceAddress) && bluetoothGatt != null) {
             if (bluetoothLowEnergyInterface != null) {
                 bluetoothLowEnergyInterface.onState(State.STATE_CONNECTING_FORMAL, bluetoothGatt);
             }
@@ -384,7 +391,6 @@ public class BluetoothLEHelper {
         }
         Log.v(TAG, "connectGatt run");
         bluetoothGatt = device.connectGatt(mContext, isAutoConnect, mGattCallback);
-
         addBluetoothDeviceAddress(bluetoothGatt);
         mBluetoothDeviceAddress = address;
         return true;
@@ -471,6 +477,9 @@ public class BluetoothLEHelper {
         disconnectBluetoothDeviceAddress();
     }
 
+    /**
+     * 清空设备
+     */
     public void clear() {
         if (mLeDevices != null) {
             mLeDevices.clear();
@@ -649,7 +658,7 @@ public class BluetoothLEHelper {
      * 扫描设备回调
      */
     public interface BluetoothLowEnergyInterface {
-        void onReceiveDevice(BluetoothDevice device);
+        void onReceiveDevice(BluetoothDevice device,String name);
 
         void onReceiveData(byte[] data, BluetoothGatt gatt, BluetoothGattCharacteristic characteristic);
 
